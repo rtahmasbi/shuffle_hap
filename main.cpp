@@ -21,6 +21,7 @@
 
 
 
+void ras_help(void)
 
 
 
@@ -40,9 +41,9 @@ int main(int argc, char ** argv)
     for (int i=1; i<argc; i++)
     {
         std::string s(argv[i]);
-        if (s=="--help")
+        if (s=="--help" || s=="-h")
         {
-            //ras_help();
+            ras_help();
             return 0;
         }
         else if (s=="--filehap")
@@ -124,6 +125,18 @@ int main(int argc, char ** argv)
     outfile.close();
     
     return 0;
+    
+}
+
+
+
+
+void ras_help(void)
+{
+    std::cout << std::endl;
+    std::cout << "Help" << std::endl;
+    std::cout << " shuffle_hap --filehap aa.hap --out [out]" << std::endl;
+    std::cout << std::endl;
     
 }
 
