@@ -21,7 +21,7 @@
 
 
 
-void ras_help(void)
+void ras_help(void);
 
 
 
