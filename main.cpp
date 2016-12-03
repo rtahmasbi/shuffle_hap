@@ -1,5 +1,5 @@
 
-
+// ./shuffle_hap --filehap aa.hap --shuffle_between_inds
 
 #include <stdio.h>
 #include <unistd.h>
@@ -15,10 +15,13 @@
 #include <algorithm> //find
 #include "CommFunc.h"
 #include <cstdlib>
+#include <random>
 
 
 #define VER "1.0"
 
+
+int myrandom (int i) { return std::rand()%i;}
 
 
 void ras_help(void);
@@ -61,6 +64,10 @@ int main(int argc, char ** argv)
         {
             shuffle_between_inds=true;
         }
+        else if (s=="--shuffle_within_inds")
+        {
+            shuffle_between_inds=false;
+        }
         else
         {
             std::cout << "Error: unknown parameter [" << s << "]" << std::endl;
@@ -99,7 +106,10 @@ void ras_help(void)
 {
     std::cout << std::endl;
     std::cout << "Help" << std::endl;
-    std::cout << " shuffle_hap --filehap aa.hap --out [out]" << std::endl;
+    std::cout << " shuffle_hap --filehap aa.hap --out [out] [--shuffle_between_inds]" << std::endl;
+    std::cout << std::endl;
+    std::cout << "Other parameters: [--shuffle_within_inds] or [--shuffle_between_inds]" << std::endl;
+    std::cout << " [--shuffle_within_inds] is the default." << std::endl;
     std::cout << std::endl;
     
 }
@@ -184,32 +194,28 @@ bool ras_shuffle_between_inds(std::string file_in, std::string file_out, std::st
     std::ofstream outfile;
     outfile.open(file_out.c_str());
     
-    srand (time(NULL));
+    srand(time(0));
     
     std::string line;
     unsigned long int j=0,i=0;
     
-    std::vector<std::string> vals(nhap);
 
+    std::vector<std::string> vals(nhap);
     // each line is one SNP
     while (std::getline(ifile, line)){
         if (show_iterations && j%1000==0) std::cout << "\r      " << j << " of " << nsnp << " read ..." << std::flush;
-        for(i=0; i<nhap-1; i++)// nhap-1, because index starts from 0
+
+        for(i=0; i<nhap; i++)// nhap-1, because index starts from 0
         {
-            if (line[2*i]=='0')
-            vals[i]="0";
-            else if (line[2*i]=='1')
-            vals[i]="1";
-            else
-            {
-                std::cout << "Error: undefined character in file ["+ file_in +"], line number:" << j << std::endl;
-                return false;
-            }
-            std::random_shuffle(vals.begin(), vals.end() );
+            std::string rr(1, line[2*i]);
+            vals[i]=rr;
         }
         j++;
         
-        for(i=0; i<vals.size(); i++)// nhap-1, because index starts from 0
+
+        srand(time(0));
+        std::random_shuffle(vals.begin(), vals.end(), myrandom);
+        for(i=0; i<vals.size(); i++)
         {
             outfile << vals[i] << sep;
         }
