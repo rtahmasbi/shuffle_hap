@@ -22,6 +22,8 @@
 
 
 void ras_help(void);
+bool ras_shuffle_within_inds(std::string file_in, std::string file_out, std::string sep, bool show_iterations);
+bool ras_shuffle_between_inds(std::string file_in, std::string file_out, std::string sep, bool show_iterations);
 
 
 
@@ -37,6 +39,7 @@ int main(int argc, char ** argv)
     std::string file_out="out";
     std::string sep=" ";
     bool show_iterations=true;
+    bool shuffle_between_inds=false;
     
     for (int i=1; i<argc; i++)
     {
@@ -54,6 +57,10 @@ int main(int argc, char ** argv)
         {
             file_out=std::string(argv[++i]);
         }
+        else if (s=="--shuffle_between_inds")
+        {
+            shuffle_between_inds=true;
+        }
         else
         {
             std::cout << "Error: unknown parameter [" << s << "]" << std::endl;
@@ -65,29 +72,58 @@ int main(int argc, char ** argv)
     /////////////////////////////////////////////////////////
     //
     
-    std::string file_name=file_hap;
-    std::ifstream ifile(file_name.c_str());
+    if(shuffle_between_inds)
+    {
+        ras_shuffle_between_inds(file_hap, file_out, sep, show_iterations);
+    }
+    else
+    {
+        ras_shuffle_within_inds(file_hap, file_out, sep, show_iterations);
+    }
+
+    
+    
+    return 0;
+    
+}
+
+
+
+
+
+
+
+
+
+void ras_help(void)
+{
+    std::cout << std::endl;
+    std::cout << "Help" << std::endl;
+    std::cout << " shuffle_hap --filehap aa.hap --out [out]" << std::endl;
+    std::cout << std::endl;
+    
+}
+
+
+bool ras_shuffle_within_inds(std::string file_in, std::string file_out, std::string sep, bool show_iterations)
+{
+    std::ifstream ifile(file_in.c_str());
     if(!ifile)
     {
-        std::cout << "Error: can not open the file ["+ file_name +"] to read." << std::endl;
+        std::cout << "Error: can not open the file ["+ file_in +"] to read." << std::endl;
         return 0;
     }
-    int nsnp= CommFunc::ras_FileLineNumber(file_hap);
-    int nhap= CommFunc::ras_FileColNumber(file_hap,sep);
+    int nsnp= CommFunc::ras_FileLineNumber(file_in);
+    int nhap= CommFunc::ras_FileColNumber(file_in,sep);
     int nind=nhap/2;
     std::cout << "nsnp=" << nsnp << ", nhap=" << nhap << std::endl;
-    
-    
+
     
     // out
     std::ofstream outfile;
     outfile.open(file_out.c_str());
-    
 
-    
     srand (time(NULL));
-
-    std::vector<std::string> st1;
     
     std::string line;
     unsigned long int j=0,i=0;
@@ -117,31 +153,81 @@ int main(int argc, char ** argv)
     
     if (j!=nsnp)
     {
-        throw("Error: in file ["+file_name+"].");
+        throw("Error: in file ["+file_in+"].");
+        return false;
+    }
+    
+    ifile.close();
+    outfile.close();
+
+    return true;
+
+}
+
+
+
+bool ras_shuffle_between_inds(std::string file_in, std::string file_out, std::string sep, bool show_iterations)
+{
+    std::ifstream ifile(file_in.c_str());
+    if(!ifile)
+    {
+        std::cout << "Error: can not open the file ["+ file_in +"] to read." << std::endl;
+        return 0;
+    }
+    int nsnp= CommFunc::ras_FileLineNumber(file_in);
+    int nhap= CommFunc::ras_FileColNumber(file_in,sep);
+    int nind=nhap/2;
+    std::cout << "nsnp=" << nsnp << ", nhap=" << nhap << std::endl;
+    
+    
+    // out
+    std::ofstream outfile;
+    outfile.open(file_out.c_str());
+    
+    srand (time(NULL));
+    
+    std::string line;
+    unsigned long int j=0,i=0;
+    
+    std::vector<std::string> vals(nhap);
+
+    // each line is one SNP
+    while (std::getline(ifile, line)){
+        if (show_iterations && j%1000==0) std::cout << "\r      " << j << " of " << nsnp << " read ..." << std::flush;
+        for(i=0; i<nhap-1; i++)// nhap-1, because index starts from 0
+        {
+            if (line[2*i]=='0')
+            vals[i]="0";
+            else if (line[2*i]=='1')
+            vals[i]="1";
+            else
+            {
+                std::cout << "Error: undefined character in file ["+ file_in +"], line number:" << j << std::endl;
+                return false;
+            }
+            std::random_shuffle(vals.begin(), vals.end() );
+        }
+        j++;
+        
+        for(i=0; i<vals.size(); i++)// nhap-1, because index starts from 0
+        {
+            outfile << vals[i] << sep;
+        }
+        outfile << std::endl;
+    }
+    
+    if (show_iterations) std::cout << std::endl;
+    
+    if (j!=nsnp)
+    {
+        throw("Error: in file ["+file_in+"].");
         return false;
     }
     
     ifile.close();
     outfile.close();
     
-    return 0;
-    
+    return true;
 }
-
-
-
-
-void ras_help(void)
-{
-    std::cout << std::endl;
-    std::cout << "Help" << std::endl;
-    std::cout << " shuffle_hap --filehap aa.hap --out [out]" << std::endl;
-    std::cout << std::endl;
-    
-}
-
-
-
-
 
 
